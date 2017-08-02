@@ -1,0 +1,14 @@
+{
+  "name": "chore",
+  "version": "0.0.1",
+  "description": "A database agnostic distributed job queue (server & client).",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "Chad Elliott <chad@exceleratedigital.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "mocha": "^3.4.2"
+  }
+}
