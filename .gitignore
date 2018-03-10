@@ -56,5 +56,9 @@ typings/
 
 # dotenv environment variables file
 .env
+.env.*
+
+lib/
 
 test-prep.js
+test.js
