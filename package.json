@@ -8,7 +8,7 @@
     "build": "babel src -d lib --copy-files",
     "watch": "babel src -d lib --copy-files -w"
   },
-  "author": "Chad Elliott <chad@exceleratedigital.com>",
+  "author": "Chad Elliott <chad.d.elliott@gmail.com>",
   "license": "MIT",
   "devDependencies": {
     "babel-cli": "^6.26.0",
