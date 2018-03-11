@@ -1,22 +1,18 @@
-# chore [![NPM version](https://badge.fury.io/js/chore.svg)](https://npmjs.org/package/chore) [![Build Status](https://travis-ci.org/THEtheChad/chore.svg?branch=master)](https://travis-ci.org/THEtheChad/chore)
+# q [![NPM version](https://badge.fury.io/js/q.svg)](https://npmjs.org/package/q) [![Build Status](https://travis-ci.org/THEtheChad/q.svg?branch=master)](https://travis-ci.org/THEtheChad/q)
 
 > A database agnostic distributed job queue (server & client).
 
 ## Installation
 
 ```sh
-$ npm install --save chore
-```
-
-```sh
-$ yarn add chore
+$ npm install --save q
 ```
 
 ## Usage
 
 ```js
-var chore = require('chore');
-chore();
+var q = require('q');
+q();
 ```
 
 ## License
