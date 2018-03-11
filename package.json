@@ -1,6 +1,6 @@
 {
   "name": "chore",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A database agnostic distributed job queue (server & client).",
   "main": "index.js",
   "scripts": {
