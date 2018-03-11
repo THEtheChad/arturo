@@ -1,51 +1,47 @@
 import os from 'os'
-import path from 'path'
+import EventEmitter from 'events'
 import child_process from 'child_process'
-import universal from './universal'
+import PriorityQueue from 'fastpriorityqueue'
 
-export default class WorkerPool {
-  constructor(database) {
-    console.log('parent', process.pid)
-    universal()[process.pid] = { test: true } // shared db connection
+class Pool extends EventEmitter {
+  static processes = []
+  static queue = new PriorityQueue(child => child.priority)
 
-    this._pool = []
-    this._queue = []
-    this._jobCount = 0
-
-    const cleanup = () => this._pool.forEach(worker => worker.kill())
-    process.on('SIGINT', cleanup); // catch ctrl-c
-    process.on('SIGTERM', cleanup); // catch kill
-    process.on('exit', cleanup)
+  constructor() {
+    super()
   }
 
-  queue(_jobs) {
-    const jobs = Array.isArray(_jobs) ? _jobs : [_jobs]
-
-    const result = new Promise((resolve, reject) =>
-      this._queue.push({ jobs, resolve, reject }))
-
-    this._jobCount += jobs.length
-
-    this.init()
-    return result
+  available() {
+    return Math.max(0, os.cpus().length - Pool.processes.length)
   }
 
-  init() {
-    //   function next(worker) {
-    //     if (queue.length) {
-    //       const job = queue.pop()
-    //       worker.send(job.toJSON())
-    //     }
-    //   }
-    const needed = Math.min(this._jobCount, os.cpus().length);
-    const missing = (needed - this._pool.length);
+  update() {
+    const available = this.available()
+    const queue = Pool.queue
 
-    for (let i = 0; i < missing; i++) {
-      const worker = child_process.fork(path.join(__dirname, 'worker'))
-      worker.send(`ppid:${process.pid}`)
-      // worker.on('message', () => next(worker))
-      // next(worker)
-      this._pool.push(worker)
+    while (available && queue.size) {
+      const child = queue.poll()
+      const instance = child_process.fork(child.path)
+      const idx = Pool.processes.push(instance) - 1
+      instance.on('exit', () => {
+        Pool.processes.splice(idx, 1)
+        this.update()
+      })
+
+      // @TODO: handle spawn error (reject)
+      child.resolve(instance)
     }
+  }
+
+  mount(path, priority = 0) {
+    const queue = Pool.queue
+    const promise = new Promise((resolve, reject) => queue.add({
+      path,
+      priority,
+      resolve,
+      reject
+    }))
+    this.update()
+    return promise
   }
 }

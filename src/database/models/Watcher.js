@@ -13,7 +13,18 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
       defaultValue: true,
     },
-  })
+  }, {
+      timestamps: false,
+    })
+
+  Watcher.associate = ({ Watcher, Job }) => {
+    Job.hasMany(Watcher, {
+      foreignKey: 'route',
+      sourceKey: 'route',
+      constraints: false,
+      as: 'watchers'
+    })
+  }
 
   return Watcher
 }

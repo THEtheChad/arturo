@@ -1,14 +1,9 @@
-import universal from './universal'
-let db
+import EventEmitter from 'events'
 
-process.on('message', function (message) {
-  const ppid = /ppid:(\d+)/.exec(message)
-  if (ppid) {
-    console.log(universal())
-    // db = universal().get(Number(ppid[1]))
-    // console.log(Number(ppid[1]), db)
-    return
+export default class Worker {
+  constructor(route, path, opts = { concurrency: 1 }) {
+    this.route = route
+    this.path = path
+    this.concurrency = opts.concurrency
   }
-  console.log('[child] received message from server:', message);
-  setTimeout(() => process.disconnect(), 5000);
-})
+}

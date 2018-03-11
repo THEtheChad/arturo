@@ -24,6 +24,7 @@ export default function (_config) {
   }
 
   sequelize.initialized = sequelize.sync()
+  sequelize.Sequelize = Sequelize
 
   return sequelize
 }

@@ -1,23 +1,6 @@
 import os from 'os'
+import child_process from 'child_process'
 import EventEmitter from 'events'
-
-async function proxy(fn, job) {
-  const task = Promise.resolve(fn(job))
-  const operations = [task]
-
-  if (job.ttl) {
-    const timeout = new Promise((resolve, reject) => {
-      let timer = setTimeout(() => reject(new Error(`Time-to-live exceeded: ${job.ttl}ms`)), job.ttl)
-      task.then(() => {
-        clearTimeout(timer)
-        resolve()
-      })
-    })
-    operations.push(timeout)
-  }
-
-  await Promise.all(operations)
-}
 
 module.exports = function (sequelize, DataTypes) {
   const Job = sequelize.define('Job', {
@@ -40,9 +23,9 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: {},
       allowNull: false,
     },
-    origin: DataTypes.INTEGER,
-    server: DataTypes.INTEGER,
-    client: DataTypes.INTEGER,
+    originClient: DataTypes.INTEGER,
+    lastServer: DataTypes.INTEGER,
+    lastClient: DataTypes.INTEGER,
     attempts: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
@@ -50,7 +33,7 @@ module.exports = function (sequelize, DataTypes) {
     },
     maxAttempts: {
       type: DataTypes.INTEGER,
-      defaultValue: 10,
+      defaultValue: 7,
     },
     error: {
       type: DataTypes.STRING,
@@ -59,16 +42,27 @@ module.exports = function (sequelize, DataTypes) {
     },
     ttl: {
       type: DataTypes.INTEGER,
+      allowNull: false,
       defaultValue: 0x6ddd00, // 2 hours
       comment: 'in milliseconds',
-      allowNull: false,
     },
     backoff: {
       type: DataTypes.STRING,
+      allowNull: false,
       defaultValue: 'exponential',
+    },
+    interval: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 20,
+      comment: 'in milliseconds',
+    },
+    initial: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
       allowNull: false,
     },
-    scheduledAt: {
+    scheduled: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
       allowNull: false,
@@ -85,13 +79,14 @@ module.exports = function (sequelize, DataTypes) {
     Job.prototype,
     EventEmitter.prototype,
     {
-      completed: function () {
+      completed: async function () {
         this.status = 'completed'
-        return this.save()
+        await this.save()
+        this.emit('completed', this)
       },
 
-      failed: function (err, opts = {}) {
-        if (err) this.error = err.message
+      failed: async function (err, opts = {}) {
+        if (err) this.error = err.message || err
 
         if (this.maxAttempts) {
           if (this.attempts >= this.maxAttempts) {
@@ -101,24 +96,22 @@ module.exports = function (sequelize, DataTypes) {
 
         this.status = opts.force ? 'failed' : 'backoff'
 
-        return this.save()
+        await this.save()
+        this.emit('failed', this)
       },
 
       assign: async function (worker) {
         this.status = 'processing'
         this.attempts++
         await this.save()
-
         this.emit('processing', this)
-        try {
-          await proxy(worker, this)
-          await this.completed()
-          this.emit('completed', this)
-        }
-        catch (err) {
-          await this.failed(err)
-          this.emit('failed', this)
-        }
+
+        await new Promise(resolve => {
+          const process = child_process.fork(worker.path)
+          process.on('message', msg => msg.err ? this.failed(msg.err) : this.completed())
+          process.on('exit', resolve)
+          process.send(this.toJSON())
+        })
       }
     }
   )

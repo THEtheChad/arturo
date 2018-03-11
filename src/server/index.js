@@ -18,7 +18,7 @@ export default class Server {
       {
         name: 'exponential',
         schedule: (job) => {
-          job.scheduledAt = job.scheduledAt.getTime() + Math.pow(20, job.attempts)
+          job.scheduled = job.scheduled.getTime() + Math.pow(job.interval, job.attempts)
         }
       }
     ]
@@ -49,7 +49,7 @@ export default class Server {
     const jobs = await this.db.models.Job.findAll({ where })
 
     return Promise.map(jobs, job => {
-
+      // @TODO: add handling for stale jobs
     }, { concurrency: 10 })
   }
 
@@ -61,7 +61,7 @@ export default class Server {
       const strategy = this.strategies.find(strategy => strategy.name === job.backoff)
       strategy.schedule(job)
 
-      job.server = this.id
+      job.lastServer = this.id
       job.status = 'retry'
       return job.save()
     }, { concurrency: 10 })

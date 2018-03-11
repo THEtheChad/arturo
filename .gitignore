@@ -60,5 +60,7 @@ typings/
 
 lib/
 
+test/
+unit-test/
 test-prep.js
 test.js

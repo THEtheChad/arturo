@@ -1,9 +1,9 @@
 import os from 'os'
 import Debug from 'debug'
 import Promise from 'bluebird'
-import child_process from 'child_process'
 
-import universal from './universal'
+import Worker from './Worker'
+import Email from '../email'
 import database from '../database'
 
 const debug = Debug('chore:client')
@@ -13,8 +13,11 @@ const FIVE_SECONDS = 5000
 
 export default class Client {
   constructor(config) {
-    this.db = database(config)
     this.host = os.hostname()
+    this.max = os.cpus().length
+
+    this.db = database(config)
+    this.email = new Email()
 
     this.workers = new Map()
 
@@ -37,30 +40,35 @@ export default class Client {
   }
 
   async processScheduledJobs() {
-    const { Op } = this.db
+    const { Op, Sequelize } = this.db
+    const { Job, Watcher } = this.db.models
+
     const route = []
     this.workers.forEach((worker, _route) => route.push(_route))
 
-    const where = {
-      route,
-      status: ['scheduled', 'retry'],
-      scheduledAt: { [Op.lte]: new Date }
-    }
+    // @TODO: reduce # fields returned by query
+    const jobs = await Job.findAll({
+      where: {
+        route,
+        status: ['scheduled', 'retry'],
+        scheduled: { [Op.lte]: new Date },
+      },
+      include: [{
+        model: Watcher,
+        required: false,
+        where: { digest: false },
+        as: 'watchers',
+      }],
+    })
 
-    const jobs = await this.db.models.Job.findAll({ where })
-    const pool = Math.max(jobs.length, os.cpus().length)
-
-    // process jobs
-    let l = jobs.length
-    while (l--) {
-      const job = jobs[l]
-      job.client = this.id
+    // @TODO: allow worker concurrency
+    await Promise.map(jobs, async job => {
       const worker = this.workers.get(job.route)
-
-      console.log(job.toJSON())
-
+      job.lastClient = this.id
       await job.assign(worker)
-    }
+      await Promise.map(job.watchers, watcher =>
+        this.email.send(watcher, job), { concurrency: 10 })
+    }, { concurrency: this.max })
   }
 
   create(route, payload = {}, opts = {}) {
@@ -69,14 +77,14 @@ export default class Client {
     const defaults = { id: route }
     this.db.models.Route.findCreateFind({ where: defaults, defaults })
 
-    return this.db.models.Job.create({ origin: this.id, route, payload, ttl: opts.ttl })
+    return this.db.models.Job.create({ originClient: this.id, route, payload, ttl: opts.ttl })
   }
 
-  async process(route, worker) {
+  async process(route, pathToWorker, opts = { concurrency: 1 }) {
     if (this.workers.has(route))
       throw new Error(`Worker already defined for: ${route}`)
 
-    this.workers.set(route, worker)
+    this.workers.set(route, new Worker(route, pathToWorker, opts))
 
     // register route
     const defaults = { id: route }
