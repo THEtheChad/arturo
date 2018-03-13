@@ -6,7 +6,9 @@
   "scripts": {
     "test": "mocha",
     "build": "babel src -d lib --copy-files",
-    "watch": "babel src -d lib --copy-files -w"
+    "watch": "babel src -d lib --copy-files -w",
+    "clean": "rm -rf ./lib",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "author": "Chad Elliott <chad.d.elliott@gmail.com>",
   "license": "MIT",
