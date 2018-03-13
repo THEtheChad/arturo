@@ -1,5 +1,5 @@
 import Client from './client'
 import Server from './server'
-import worker from './worker'
+import Worker from './worker'
 
-export default { Client, Server, worker }
+export default { Client, Server, Worker }
