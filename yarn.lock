@@ -2691,10 +2691,6 @@ matched@^1.0.2:
     is-valid-glob "^1.0.0"
     resolve-dir "^1.0.0"
 
-memored@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.npmjs.org/memored/-/memored-1.1.1.tgz#7c81c04ee084c956d546ec8db9375ce764f5e746"
-
 merge-value@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/merge-value/-/merge-value-1.0.0.tgz#d28f8d41c0b37426e032d1059a0d0343302de502"
