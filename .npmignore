@@ -1,2 +1,10 @@
+.env
+.env.*
+yarn-error.log
+
 src/
-README.md
+
+test/
+unit-test/
+test-prep.js
+test.js
