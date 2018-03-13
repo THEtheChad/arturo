@@ -1,18 +1,18 @@
-# q [![NPM version](https://badge.fury.io/js/q.svg)](https://npmjs.org/package/q) [![Build Status](https://travis-ci.org/THEtheChad/q.svg?branch=master)](https://travis-ci.org/THEtheChad/q)
+# arturo [![NPM version](https://badge.fury.io/js/arturo.svg)](https://npmjs.org/package/arturo) [![Build Status](https://travis-ci.org/THEtheChad/arturo.svg?branch=master)](https://travis-ci.org/THEtheChad/arturo)
 
-> A database agnostic distributed job queue (server & client).
+> A database agnostic distributed job queue (server, client, and worker).
 
 ## Installation
 
 ```sh
-$ npm install --save q
+$ npm install --save arturo
 ```
 
 ## Usage
 
 ```js
-var q = require('q');
-q();
+var arturo = require('arturo');
+arturo();
 ```
 
 ## License

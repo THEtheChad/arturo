@@ -1,7 +1,7 @@
 {
-  "name": "q",
-  "version": "0.0.2",
-  "description": "A database agnostic distributed job queue (server & client).",
+  "name": "arturo",
+  "version": "0.0.1",
+  "description": "A database agnostic distributed job queue (server, client, and worker).",
   "main": "index.js",
   "scripts": {
     "test": "mocha",
