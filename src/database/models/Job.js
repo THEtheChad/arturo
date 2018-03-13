@@ -19,7 +19,7 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
     },
     payload: {
-      DataTypes.STRING,
+      type: DataTypes.STRING,
       set: function (json) {
         const str = (json == null) ? null : JSON.stringify(json)
         this.setDataValue('payload', str)
