@@ -18,7 +18,17 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: 'scheduled',
       allowNull: false,
     },
-    payload: DataTypes.STRING,
+    payload: {
+      DataTypes.STRING,
+      set: function (json) {
+        const str = (json == null) ? null : JSON.stringify(json)
+        this.setDataValue('payload', str)
+      },
+      get: function () {
+        const str = this.getDataValue('payload')
+        return JSON.parse(str)
+      }
+    },
     originClient: DataTypes.INTEGER,
     lastServer: DataTypes.INTEGER,
     lastClient: DataTypes.INTEGER,
