@@ -1,15 +1,17 @@
 import { promisify } from 'util'
 
-module.exports = function (_worker) {
-  const type = typeof _worker
+const proxy = async (worker, job) => worker(job)
+
+module.exports = function (worker) {
+  const type = typeof worker
   if (type !== 'function')
     throw new Error(`Expected worker to be a function but got ${type} instead.`)
 
-  // turn the worker into a promise
-  const worker = (_worker.length === 1) ? Promise.resolve(_worker) : promisify(_worker)
+  if (worker.length !== 1)
+    worker = promisify(worker)
 
   process.on('message', async (job) => {
-    const processing = worker(job).catch(err => { })
+    const processing = proxy(worker, job)
     const operations = [processing]
 
     if (job.ttl) {

@@ -65,6 +65,7 @@ export default class Client {
     await Promise.map(jobs, async job => {
       const worker = this.workers.get(job.route)
       job.lastClient = this.id
+      // @TODO: mark job as failed if worker fails to load
       await job.assign(worker)
       await Promise.map(job.watchers, watcher =>
         this.email.send(watcher, job), { concurrency: 10 })
