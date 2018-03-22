@@ -8,40 +8,43 @@ nunjucks.configure(templates, { autoescape: true })
 
 export default class Email {
   constructor(config) {
-    // this.transport = nodemailer.createTransport({
-    //   sendmail: true,
-    //   newline: 'unix',
-    //   path: '/usr/sbin/sendmail',
-    // })
-    this.queue = new Map()
+    if (config) {
+      this.transport = nodemailer.createTransport(config)
+    }
   }
 
-  send(watcher, job) {
-    const messageId = [watcher.email, job.id].join('-')
+  send(job) {
+    if (!this.transport) return
 
-    let message = this.queue.get(messageId)
+    const status = { job }
+    if (status !== 'completed' || status !== 'failed') return
+
+    const title = job.route
+      .replace(/\/(.)/g, (m, c) => ' ' + c.toUpperCase())
+      .slice(1)
+    const subject = `${title} ${job.status}`
+    const bcc = job.watchers.map(watcher => watcher.email)
+    const html = nunjucks.render('single.html', job.toJSON())
+
+    this.transport.sendMail({
+      from: 'automation@exceleratedigital.com',
+      subject,
+      bcc,
+      html,
+    }, (err, info) => err && console.error(err))
 
     // @TODO: add debounce for emails so we don't mail too frequentyly
-    if (!message) {
-      message = {}
-      message.queue = debounce((function () {
-        const html = nunjucks.render('single.html', job.toJSON())
-      }).bind(message), 350000)
-    }
+    return
 
-    message.job = job.toJSON()
-    message.queue()
+    // let message = this.queue.get(messageId)
+    // if (!message) {
+    //   message = {}
+    //   message.queue = debounce((function () {
+    //     const html = nunjucks.render('single.html', job.toJSON())
+    //   }).bind(message), 350000)
+    // }
 
-    // this.transport.sendMail({
-    //   from: 'automation@exceleratedigital.com',
-    //   subject: '',
-    //   to: [],
-    //   text: 'test',
-    //   html: 'test',
-    // }, (err, info) => {
-    //   if (err) return console.error(err);
-
-    //   console.log('Message sent: %s', info.messageId);
-    // });
+    // message.job = job.toJSON()
+    // message.queue()
   }
 }

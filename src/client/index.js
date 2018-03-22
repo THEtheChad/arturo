@@ -12,12 +12,12 @@ const FIVE_MINUTES = 300000
 const FIVE_SECONDS = 5000
 
 export default class Client {
-  constructor(config) {
+  constructor(config = {}) {
     this.host = os.hostname()
     this.max = os.cpus().length
 
     this.db = database(config)
-    this.email = new Email()
+    this.email = new Email(config.email)
 
     this.workers = new Map()
 
@@ -67,8 +67,7 @@ export default class Client {
       job.lastClient = this.id
       // @TODO: mark job as failed if worker fails to load
       await job.assign(worker)
-      await Promise.map(job.watchers, watcher =>
-        this.email.send(watcher, job), { concurrency: 10 })
+      await this.email.send(job)
     }, { concurrency: this.max })
   }
 
