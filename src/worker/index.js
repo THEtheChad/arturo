@@ -7,7 +7,7 @@ module.exports = function (worker) {
   if (type !== 'function')
     throw new Error(`Expected worker to be a function but got ${type} instead.`)
 
-  if (worker.length !== 1)
+  if (worker.length > 1)
     worker = promisify(worker)
 
   process.on('message', async (job) => {
