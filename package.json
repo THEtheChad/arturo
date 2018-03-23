@@ -5,8 +5,8 @@
   "main": "lib/index.js",
   "scripts": {
     "test": "mocha",
-    "build": "babel src -d lib --copy-files",
-    "watch": "babel src -d lib --copy-files -w",
+    "build": "npm run clean && babel src -d lib --copy-files",
+    "build:watch": "npm run build -- -w",
     "clean": "rm -rf ./lib",
     "prepare": "npm run clean && npm run build"
   },
