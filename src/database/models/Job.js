@@ -114,8 +114,23 @@ module.exports = function (sequelize, DataTypes) {
 
         await new Promise(resolve => {
           const process = child_process.fork(worker.path)
-          process.on('message', msg => msg.err ? this.failed(msg.err) : this.completed())
-          process.on('exit', resolve)
+          const operations = []
+          process.on('message', (msg) => {
+            const operation = msg.err ? this.failed(msg.err) : this.completed()
+            operations.push(operation)
+          })
+          process.on('error', (err) => {
+            const operation = this.failed(err.message)
+            operations.push(operation)
+          })
+          process.on('exit', async (code) => {
+            if (code) {
+              const operation = this.failed('Worker failed to execute properly.')
+              operations.push(operation)
+            }
+            await Promise.all(operations)
+            resolve()
+          })
           process.send(this.toJSON())
         })
       }
