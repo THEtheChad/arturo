@@ -8,7 +8,6 @@ nunjucks.configure(templates, { autoescape: true })
 
 export default class Email {
   constructor(config) {
-    console.log(config)
     if (config) {
       this.transport = nodemailer.createTransport(config)
     }
@@ -17,8 +16,6 @@ export default class Email {
   send(job) {
     if (!this.transport) return
     if (!job.watchers.length) return
-
-    console.log(job.status)
 
     switch (job.status) {
       case 'completed':
@@ -34,14 +31,6 @@ export default class Email {
     const subject = `${title} ${job.status}`
     const bcc = job.watchers.map(watcher => watcher.email)
     const html = nunjucks.render('single.html', job.toJSON())
-
-    console.log({
-      from: 'automation@exceleratedigital.com',
-      subject,
-      bcc,
-    })
-
-    return
 
     this.transport.sendMail({
       from: 'automation@exceleratedigital.com',
