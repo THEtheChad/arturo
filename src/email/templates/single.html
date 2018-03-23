@@ -13,11 +13,73 @@
       <td>
         <table align="center" border="1" cellpadding="0" cellspacing="0" width="600">
           <tr>
-            <td align="center" bgcolor="#70bbd9" style="padding: 40px 0 30px 0;">
-              {{ route | uppercase }} {{ status }}
+            <td>
+              <table align="center" border="0" cellpadding="0" cellspacing="0" width="600">
+                <tr>
+                  <td align="center" bgcolor="#70bbd9" style="padding: 40px 0 30px 0; color: #ffffff; font-family: Arial, sans-serif; font-size: 26px;">
+                    <b>{{ route | uppercase }} {{ status }}</b>
+                  </td>
+                </tr>
+              </table>
+              <table align="center" border="0" cellpadding="0" cellspacing="0" width="600">
+                <tr>
+                  <td align="center" bgcolor="#ffffff" style="padding: 20px 0 20px 0;">
+                    <table align="center" border="0" cellpadding="0" cellspacing="0" width="400">
+                      <tr>
+                        <td style="text-align: right; font-family: Arial, sans-serif; font-size: 16px;">
+                          Job #
+                        </td>
+                        <td style="padding: 2px 0 2px 20px; font-family: Arial, sans-serif; font-size: 14px;">
+                          {{ id }}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="text-align: right; font-family: Arial, sans-serif; font-size: 16px;">
+                          Origin
+                        </td>
+                        <td style="padding: 2px 0 2px 20px; font-family: Arial, sans-serif; font-size: 14px;">
+                          {{ originClient }}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="text-align: right; font-family: Arial, sans-serif; font-size: 16px;">
+                          Client
+                        </td>
+                        <td style="padding: 2px 0 2px 20px; font-family: Arial, sans-serif; font-size: 14px;">
+                          {{ lastClient }}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="text-align: right; font-family: Arial, sans-serif; font-size: 16px;">
+                          Started
+                        </td>
+                        <td style="padding: 2px 0 2px 20px; font-family: Arial, sans-serif; font-size: 14px;">
+                          {{ scheduled }}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="text-align: right; font-family: Arial, sans-serif; font-size: 16px;">
+                          Finished
+                        </td>
+                        <td style="padding: 2px 0 2px 20px; font-family: Arial, sans-serif; font-size: 14px;">
+                          {{ updatedAt }}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="text-align: right; font-family: Arial, sans-serif; font-size: 16px;">
+                          Duration
+                        </td>
+                        <td style="padding: 2px 0 2px 20px; font-family: Arial, sans-serif; font-size: 14px;">
+                          ---
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
-        </table>
+        </table> 
       </td>
     </tr>
   </table>
