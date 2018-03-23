@@ -39,6 +39,6 @@ module.exports = function (worker) {
         payload: job
       })
     }
-    process.disconnect()
+    process.exit()
   })
 }
