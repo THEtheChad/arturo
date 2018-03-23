@@ -8,6 +8,7 @@ nunjucks.configure(templates, { autoescape: true })
 
 export default class Email {
   constructor(config) {
+    console.log(config)
     if (config) {
       this.transport = nodemailer.createTransport(config)
     }
@@ -15,9 +16,17 @@ export default class Email {
 
   send(job) {
     if (!this.transport) return
+    if (!job.watchers.length) return
 
-    const status = { job }
-    if (status !== 'completed' || status !== 'failed') return
+    console.log(job.status)
+
+    switch (job.status) {
+      case 'completed':
+      case 'failed':
+        break
+      default:
+        return
+    }
 
     const title = job.route
       .replace(/\/(.)/g, (m, c) => ' ' + c.toUpperCase())
@@ -25,6 +34,14 @@ export default class Email {
     const subject = `${title} ${job.status}`
     const bcc = job.watchers.map(watcher => watcher.email)
     const html = nunjucks.render('single.html', job.toJSON())
+
+    console.log({
+      from: 'automation@exceleratedigital.com',
+      subject,
+      bcc,
+    })
+
+    return
 
     this.transport.sendMail({
       from: 'automation@exceleratedigital.com',
@@ -34,17 +51,5 @@ export default class Email {
     }, (err, info) => err && console.error(err))
 
     // @TODO: add debounce for emails so we don't mail too frequentyly
-    return
-
-    // let message = this.queue.get(messageId)
-    // if (!message) {
-    //   message = {}
-    //   message.queue = debounce((function () {
-    //     const html = nunjucks.render('single.html', job.toJSON())
-    //   }).bind(message), 350000)
-    // }
-
-    // message.job = job.toJSON()
-    // message.queue()
   }
 }

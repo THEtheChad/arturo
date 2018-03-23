@@ -58,7 +58,7 @@ export default class Client {
         required: false,
         where: { digest: false },
         as: 'watchers',
-      }],
+      }]
     })
 
     // @TODO: allow worker concurrency
@@ -77,7 +77,17 @@ export default class Client {
     const defaults = { id: route }
     this.db.models.Route.findCreateFind({ where: defaults, defaults })
 
-    return this.db.models.Job.create({ originClient: this.id, route, payload, ttl: opts.ttl })
+    const job = Object.assign({}, opts, {
+      originClient: this.id,
+      route,
+      payload,
+    })
+
+    return this.db.models.Job.create(job)
+  }
+
+  watcher(email, route, digest = true) {
+    return this.db.models.Watcher.create({ email, route, digest })
   }
 
   async process(route, pathToWorker, opts = { concurrency: 1 }) {
