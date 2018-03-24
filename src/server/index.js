@@ -3,7 +3,7 @@ import Debug from 'debug'
 import Promise from 'bluebird'
 import database from '../database'
 
-const debug = Debug('chore:server')
+const debug = Debug('arturo:server')
 
 const TEN_MINUTES = 600000
 const FIVE_SECONDS = 5000

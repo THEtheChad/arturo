@@ -6,7 +6,7 @@ import Worker from './Worker'
 import Email from '../email'
 import database from '../database'
 
-const debug = Debug('chore:client')
+const debug = Debug('arturo:client')
 
 const FIVE_MINUTES = 300000
 const FIVE_SECONDS = 5000
@@ -14,7 +14,7 @@ const FIVE_SECONDS = 5000
 export default class Client {
   constructor(config = {}) {
     this.host = os.hostname()
-    this.max = os.cpus().length
+    this.maxConcurrent = os.cpus().length - 1
 
     this.db = database(config)
     this.email = new Email(config.email)
@@ -68,7 +68,7 @@ export default class Client {
       // @TODO: mark job as failed if worker fails to load
       await job.assign(worker)
       await this.email.send(job)
-    }, { concurrency: this.max })
+    }, { concurrency: this.maxConcurrent })
   }
 
   create(route, payload = {}, opts = {}) {
@@ -90,11 +90,11 @@ export default class Client {
     return this.db.models.Watcher.create({ email, route, digest })
   }
 
-  async process(route, pathToWorker, opts = { concurrency: 1 }) {
+  async process(route, script, opts = { concurrency: 1 }) {
     if (this.workers.has(route))
       throw new Error(`Worker already defined for: ${route}`)
 
-    this.workers.set(route, new Worker(route, pathToWorker, opts))
+    this.workers.set(route, new Worker(route, script, opts))
 
     // register route
     const defaults = { id: route }
