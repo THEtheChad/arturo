@@ -1,6 +1,7 @@
 import os from 'os'
 import Debug from 'debug'
 import Promise from 'bluebird'
+import listener from './listener'
 import database from '../database'
 
 const debug = Debug('arturo:server')
@@ -65,6 +66,14 @@ export default class Server {
       job.status = 'retry'
       return job.save()
     }, { concurrency: 10 })
+  }
+
+  async addWorker(client = {}) {
+    console.log(client)
+  }
+
+  async removeWorker(client = {}) {
+    console.log(client)
   }
 
   async markActiveClients() {

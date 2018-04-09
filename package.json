@@ -22,10 +22,13 @@
   },
   "dependencies": {
     "bluebird": "^3.5.1",
+    "comedy": "^1.3.0",
     "debug": "^3.1.0",
     "fastpriorityqueue": "^0.3.1",
     "nodemailer": "^4.6.2",
-    "nunjucks": "^3.1.2"
+    "nssocket": "^0.6.0",
+    "nunjucks": "^3.1.2",
+    "toobusy-js": "^0.5.1"
   },
   "optionalDependencies": {
     "mysql2": "^1.5.2",
