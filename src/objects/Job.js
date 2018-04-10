@@ -1,14 +1,27 @@
 export default class Job {
-  constructor(attrs = {}) {
+  constructor(attrs) {
     if (!attrs.route)
       throw new Error('invalid job: must specify a route')
 
-    Object.assign(this, {
+    this.data = {
       id: null,
       route: null,
       params: null,
       hash: null,
       status: 'scheduled',
-    }, attrs)
+      ttl: null,
+    }
+
+    this.indexes = ['id']
+
+    Object.assign(this.data, attrs)
+  }
+
+  toJSON() {
+    return this.data
+  }
+
+  toString() {
+    return JSON.stringify(this.toJSON())
   }
 }

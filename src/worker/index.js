@@ -1,8 +1,10 @@
+import stream from 'stream'
 import { promisify } from 'util'
 
-const proxy = async (worker, job) => worker(job)
+import Engine from './Engine'
+import Queue from '../utilities/Queue'
 
-module.exports = function (worker) {
+function Factory(worker, opts = {}) {
   const type = typeof worker
   if (type !== 'function')
     throw new Error(`Expected worker to be a function but got ${type} instead.`)
@@ -10,35 +12,22 @@ module.exports = function (worker) {
   if (worker.length > 1)
     worker = promisify(worker)
 
-  process.on('message', async (job) => {
-    const processing = proxy(worker, job)
-    const operations = [processing]
+  const messenger = opts.messenger || process
 
-    if (job.ttl) {
-      const timeout = new Promise((resolve, reject) => {
-        let timer = setTimeout(() => reject(new Error(`Time-to-live exceeded: ${job.ttl}ms`)), job.ttl)
-        processing.then(() => {
-          clearTimeout(timer)
-          resolve()
-        })
-      })
-      operations.push(timeout)
-    }
+  const queue = new Queue
+  queue
+    .pipe(new Engine(worker, opts))
+    .on('data', result => messenger.send(result))
+    .on('end', () => messenger.disconnect())
 
-    try {
-      await Promise.all(operations)
-      process.send({
-        status: 'completed',
-        payload: job
-      })
+  messenger.on('message', (msg) => {
+    switch (msg.type) {
+      case 'job': queue.push(msg.payload); break
+      case 'end': queue.push(null); break
     }
-    catch (err) {
-      process.send({
-        status: 'failed',
-        err: err.message,
-        payload: job
-      })
-    }
-    process.exit()
   })
+
+  return queue
 }
+
+module.exports = Factory

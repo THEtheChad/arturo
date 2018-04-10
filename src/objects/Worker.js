@@ -3,8 +3,32 @@ export default class Worker {
     if (!attrs.route)
       throw new Error('invalid worker: must specify a route')
 
-    Object.assign(this, {
+    if (!attrs.path)
+      throw new Error('invalid worker: must specify a path')
+
+    this.data = {
       route: null,
-    }, attrs)
+      type: 'local',
+      path: null,
+    }
+
+    this.indexes = ['route']
+
+    Object.assign(this.data, attrs)
+  }
+
+  toJSON() {
+    return this.data
+  }
+
+  toString() {
+    return JSON.stringify(this.toJSON())
+  }
+
+  where(attrs) {
+    return this.indexes.reduce((query, index) => {
+      query[index] = this.data[index]
+      return query
+    }, {})
   }
 }
