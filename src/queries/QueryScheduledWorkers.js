@@ -1,6 +1,6 @@
 import stream from 'stream'
 
-export default class GetScheduledWorkers extends stream.Readable {
+export default class QueryScheduledWorkers extends stream.Readable {
   constructor(sequelize) {
     super({ objectMode: true })
 
@@ -13,7 +13,7 @@ export default class GetScheduledWorkers extends stream.Readable {
           FROM Jobs
           WHERE
               Jobs.status IN ('scheduled', 'retry') AND
-              Jobs.scheduled <= CONVERT('${new Date().toISOString()}', datetime)
+              Jobs.scheduledDate <= CONVERT('${new Date().toISOString()}', datetime)
             GROUP BY Jobs.route
         )
     `)

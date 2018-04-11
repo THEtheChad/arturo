@@ -10,8 +10,7 @@ import Worker from '../objects/Worker'
 
 // Modules
 import Registrar from './Registrar'
-import WorkerManager from '../worker/WorkerManager'
-import JobManager from '../worker/JobManager'
+import ProcessScheduledJobs from './ProcessScheduledJobs'
 
 // Utilities
 import Queue from '../utilities/Queue'
@@ -28,21 +27,19 @@ export default class Server {
       {
         name: 'exponential',
         schedule: (job) => {
-          job.scheduled = job.scheduled.getTime() + Math.pow(job.interval, job.attempts)
+          job.scheduledDate = job.scheduledDate.getTime() + Math.pow(job.interval, job.attempts)
         }
       }
     ]
-
-    this.queue = {
-      job: new Queue
-    }
 
     this.initialized = this.db.initialized.then(async () => {
       // register with the database
       this.instance = await this.db.models.Server.create(this)
 
-      this.initRegistrar()
-      this.initManagers()
+      this.processor = new ProcessScheduledJobs(this.db, {
+        server: this,
+        concurrency: Math.max(os.cpus() - 1, 1),
+      })
 
       this.trigger('keepAlive', moment.duration(5, 'minutes'))
       this.trigger('scheduleRetries', moment.duration(1, 'minute'))
@@ -50,18 +47,6 @@ export default class Server {
       this.trigger('markActiveServers', moment.duration(10, 'minutes'))
       this.trigger('processScheduledJobs', moment.duration(1, 'minute'))
     })
-  }
-
-  initManagers() {
-    const manager = new WorkerManager
-    manager.inbox.write({ route: '/test', path: '/blah' })
-
-    const results = manager.results()
-    results.on('data', result => {
-      console.log(result)
-    })
-
-    manager.pipe(new JobManager)
   }
 
   initRegistrar() {
@@ -133,26 +118,6 @@ export default class Server {
   }
 
   async processScheduledJobs() {
-    const workers = this.getWorkers()
-    workers.forEach(async worker => {
-      const jobs = await this.getScheduledJobs(worker)
-    })
-  }
-
-  async getWorkers() {
-    const workers = await this.instance.getWorkers()
-    return workers.map(worker => new Worker(worker))
-  }
-
-  async getScheduledJobs(worker) {
-    const jobs = await this.db.models.Job.findAll({
-      where: {
-        route: worker.route,
-        status: ['scheduled', 'retry'],
-        scheduled: { [Op.lte]: new Date },
-      },
-      limit: 10
-    })
-    return jobs.map(job => new Job(job))
+    this.processor.execute()
   }
 }

@@ -1,26 +1,19 @@
-import WorkerManager from '../worker/WorkerManager'
-import JobManager from '../worker/JobManager'
-import GetScheduledWorkers from './GetScheduledWorkers'
+import JobUpdater from './JobUpdater'
+import WorkerManager from './WorkerManager'
+import QueryScheduledWorkers from '../queries/QueryScheduledWorkers'
 
 export default class ProcessScheduledJobs {
-  constructor(sequelize) {
-    this.sequelize = sequelize
+	constructor(sequelize, opts = {}) {
+		this.sequelize = sequelize
 
-    this.manager = new WorkerManager
-    this.manager.pipe(new JobManager(sequelize))
+		this.manager = new WorkerManager(sequelize, opts)
+		this.results = this.manager.outbox()
 
-    this.manager.results().on('data', result => {
-      console.log(result)
-    })
-  }
+		this.updater = new JobUpdater(sequelize, opts)
+		this.updater.inbox(this.results)
+	}
 
-  execute() {
-    return new Promise((resolve, reject) => {
-      const queue = new GetScheduledWorkers(this.sequelize)
-      queue
-        .on('error', reject)
-        .on('end', () => resolve())
-      this.manager.inbox(queue)
-    })
-  }
+	execute() {
+		this.manager.inbox(new QueryScheduledWorkers(this.sequelize))
+	}
 }

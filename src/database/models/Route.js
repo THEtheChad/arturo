@@ -9,10 +9,7 @@ module.exports = function (sequelize, DataTypes) {
       timestamps: false,
     })
 
-  Route.associate = function ({ Client, Route }) {
-    Client.belongsToMany(Route, { through: 'ClientRoutes' })
-    Route.belongsToMany(Client, { through: 'ClientRoutes' })
-  }
+  Route.associate = function () { }
 
   return Route
 };

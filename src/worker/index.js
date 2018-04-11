@@ -1,4 +1,3 @@
-import stream from 'stream'
 import { promisify } from 'util'
 
 import Engine from './Engine'
@@ -15,8 +14,10 @@ function Factory(worker, opts = {}) {
   const messenger = opts.messenger || process
 
   const queue = new Queue
-  queue
-    .pipe(new Engine(worker, opts))
+  const engine = new Engine(worker, opts)
+  engine.inbox(queue, { end: true })
+
+  engine.outbox()
     .on('data', result => messenger.send(result))
     .on('end', () => messenger.disconnect())
 

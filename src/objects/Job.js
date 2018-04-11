@@ -1,3 +1,5 @@
+const TWO_HOURS = 7200000
+
 export default class Job {
   constructor(attrs) {
     if (!attrs.route)
@@ -6,10 +8,10 @@ export default class Job {
     this.data = {
       id: null,
       route: null,
-      params: null,
-      hash: null,
+      params: '{}',
+      hash: '',
       status: 'scheduled',
-      ttl: null,
+      ttl: TWO_HOURS,
     }
 
     this.indexes = ['id']

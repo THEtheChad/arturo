@@ -1,6 +1,6 @@
 import Reader from '../utilities/Reader'
 
-export default class GetScheduledJobs extends Reader {
+export default class QueryScheduledJobs extends Reader {
   constructor(sequelize, worker) {
     const { Op } = sequelize
 
@@ -8,7 +8,7 @@ export default class GetScheduledJobs extends Reader {
       where: {
         route: worker.route,
         status: ['scheduled', 'retry'],
-        scheduled: { [Op.lte]: new Date },
+        scheduledDate: { [Op.lte]: new Date },
       }
     })
   }

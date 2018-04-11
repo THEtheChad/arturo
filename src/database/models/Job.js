@@ -9,29 +9,33 @@ module.exports = function (sequelize, DataTypes) {
       primaryKey: true,
       autoIncrement: true,
     },
-    route: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
     status: {
       type: DataTypes.STRING,
       defaultValue: 'scheduled',
       allowNull: false,
     },
-    payload: {
+    route: {
       type: DataTypes.STRING,
+      allowNull: false,
+    },
+    params: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: '{}',
       set: function (json) {
-        const str = (json == null) ? null : JSON.stringify(json)
-        this.setDataValue('payload', str)
+        const str = (json == null) ? '{}' : JSON.stringify(json)
+        this.setDataValue('params', str)
       },
       get: function () {
-        const str = this.getDataValue('payload')
+        const str = this.getDataValue('params')
         return JSON.parse(str)
-      }
+      },
     },
-    originClient: DataTypes.INTEGER,
-    lastServer: DataTypes.INTEGER,
-    lastClient: DataTypes.INTEGER,
+    hash: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: '',
+    },
     attempts: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
@@ -41,16 +45,16 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.INTEGER,
       defaultValue: 7,
     },
-    error: {
-      type: DataTypes.STRING,
-      defaultValue: null,
-      allowNull: true,
-    },
     ttl: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0x6ddd00, // 2 hours
       comment: 'in milliseconds',
+    },
+    error: {
+      type: DataTypes.STRING,
+      defaultValue: null,
+      allowNull: true,
     },
     backoff: {
       type: DataTypes.STRING,
@@ -63,78 +67,22 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: 20,
       comment: 'in milliseconds',
     },
-    initial: {
+    lastServer: DataTypes.INTEGER,
+    scheduledDate: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
       allowNull: false,
     },
-    scheduled: {
+    initialDate: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
       allowNull: false,
     },
+    startDate: type: DataTypes.DATE,
+    finishDate: type: DataTypes.DATE,
   })
 
-  const _constructor = Job.constructor
-  Job.constructor = function () {
-    _constructor.apply(this, arguments)
-    EventEmitter.constructor.call(this)
-  }
-
-  Object.assign(
-    Job.prototype,
-    EventEmitter.prototype,
-    {
-      completed: async function () {
-        this.status = 'completed'
-        await this.save()
-        this.emit('completed', this)
-      },
-
-      failed: async function (err, opts = {}) {
-        if (err) this.error = err.message || err
-
-        if (this.maxAttempts) {
-          if (this.attempts >= this.maxAttempts) {
-            opts.force = true
-          }
-        }
-
-        this.status = opts.force ? 'failed' : 'backoff'
-
-        await this.save()
-        this.emit('failed', this)
-      },
-
-      assign: async function (worker) {
-        this.status = 'processing'
-        this.attempts++
-        await this.save()
-        this.emit('processing', this)
-
-        await new Promise(resolve => {
-          let lastOperation = null
-          const process = child_process.fork(worker.path)
-
-          process.on('message', (msg) => {
-            lastOperation = msg.err ? this.failed(msg.err) : this.completed()
-          })
-          process.on('error', (err) => {
-            lastOperation = this.failed(err.message)
-          })
-          process.on('exit', async (code, signal) => {
-            if (code) {
-              lastOperation = this.failed('Worker failed to execute properly (check the logs)')
-            }
-
-            await lastOperation
-            resolve()
-          })
-          process.send(this.toJSON())
-        })
-      }
-    }
-  )
+  Job.associate = function () { }
 
   return Job
 };
