@@ -7,11 +7,23 @@ export default class Job {
 
     this.data = {
       id: null,
+      status: 'scheduled',
       route: null,
       params: '{}',
       hash: '',
-      status: 'scheduled',
+      attempts: 0,
+      maxAttempts: null,
       ttl: TWO_HOURS,
+      error: null,
+      backoff: null,
+      interval: null,
+      lastServer: null,
+      scheduledDate: new Date().toISOString(),
+      initialDate: new Date().toISOString(),
+      startDate: null,
+      finishDate: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
 
     this.indexes = ['id']

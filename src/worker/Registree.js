@@ -2,7 +2,7 @@ import net from 'net'
 import { after } from 'lodash'
 import nssocket from 'nssocket'
 
-export default class Registree {
+export default class WorkerRegistration {
   constructor() {
     this.config = { port: 61681 }
   }

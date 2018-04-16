@@ -1,90 +1,78 @@
 import stream from 'stream'
-import EventEmitter from 'events'
 
-const identity = v => v
-
-class ActorFlow extends stream.Writable {
-  constructor(computation, opts) {
+export default class Actor extends stream.Transform {
+  constructor(opts = {}) {
     super({ objectMode: true })
 
-    this._active = []
-    this.computation = async (obj) => computation(obj)
+    this.opts = opts
+
+    this.active = []
     this.concurrency = opts.concurrency || 1
-  }
-
-  active(operation) {
-    this._active.push(operation)
-  }
-
-  inactive(operation) {
-    const idx = this._active.indexOf(operation)
-    this._active.splice(idx, 1)
-  }
-
-  process(obj) {
-    const operation = this.computation(obj)
-    this.active(operation)
-    operation
-      .then((result) => {
-        this.inactive(operation)
-      })
-      .catch(err => {
-        this.emit('error', err)
-        this.inactive(operation)
-      })
-
-    return operation
-  }
-
-  _write(obj, enc, next) {
-    const operation = this.process(obj);
-
-    if (this._active.length < this.concurrency) {
-      next()
-    } else {
-      operation.then(() => next())
-    }
-  }
-}
-
-export default class Actor extends EventEmitter {
-  constructor(computation = identity, opts = {}) {
-    super()
-    this.sources = []
+    this.compute = async (payload) => this._compute(payload)
     this._outbox = new stream.PassThrough({ objectMode: true })
-    this._inbox = new ActorFlow(computation.bind(this._outbox), opts)
+    this.pipe(this._outbox)
 
-    this._inbox.on('finish', () => this.exit())
+    this.on('pause', () => console.log(`paused ${this.constructor.name}`))
   }
 
-  inbox(stream, _opts) {
-    const opts = Object.assign({ end: false }, _opts)
-
-    // this.sources.push(stream)
-    stream.pipe(this._inbox, opts)
-    // stream.on('unpipe', () => {})
-    // stream.on('end', () => {
-    //   this.emit('source:end', stream)
-    //   stream.unpipe(this._inbox)
-    //   const idx = this.sources.indexOf(stream)
-    //   if (idx !== -1) {
-    //     this.sources.splice(idx, 1)
-    //   }
-    // })
+  _compute(payload) {
+    throw new Error('Must provide a _compute method to Actor')
   }
 
-  outbox(stream) {
+  begin(operation) {
+    this.active.push(operation)
+    operation
+      .then(() => this.resolve(operation))
+      .catch(err => {
+        this.resolve(operation)
+        return err
+      })
+  }
+
+  resolve(operation) {
+    const idx = this.active.indexOf(operation)
+    this.active.splice(idx, 1)
+  }
+
+  get empty() {
+    return this.readableLength === 0
+  }
+
+  inbox(stream, opts = { end: false }) {
     if (stream) {
-      this._outbox.pipe(stream)
+      stream.pipe(this, opts)
+      return this
+    }
+    const input = new stream.PassThrough({ objectMode: true })
+    input.pipe(this, { end: false })
+    return input
+  }
+
+  outbox(stream, opts = { end: false }) {
+    if (stream) {
+      this._outbox.pipe(stream, opts)
+      return this
     }
     return this._outbox
   }
 
-  exit() {
-    this.sources.forEach(stream =>
-      stream.unpipe(this.stream))
-    this._inbox.end()
-    this._outbox.end()
-    this.emit('end')
+  async _transform(payload, enc, next) {
+    if (this.flushing) return
+
+    const operation = this.compute(payload)
+
+    this.begin(operation)
+    let concurrent = this.active.length < this.concurrency
+
+    if (concurrent) next()
+
+    try {
+      await operation
+    } catch (err) {
+      this.emit('error', err)
+    }
+    this.resolve(operation)
+
+    if (!concurrent) next()
   }
 }

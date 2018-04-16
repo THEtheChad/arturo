@@ -1,4 +1,4 @@
-import path from 'path'
+import path, { resolve } from 'path'
 import nunjucks from 'nunjucks'
 import { debounce } from 'lodash'
 import nodemailer from 'nodemailer'
@@ -13,9 +13,9 @@ export default class Email {
     }
   }
 
-  send(job) {
+  send(job, watchers) {
     if (!this.transport) return
-    if (!job.watchers.length) return
+    if (!watchers.length) return
 
     switch (job.status) {
       case 'completed':
@@ -29,15 +29,17 @@ export default class Email {
       .replace(/\/(.)/g, (m, c) => ' ' + c.toUpperCase())
       .slice(1)
     const subject = `${title} ${job.status}`
-    const bcc = job.watchers.map(watcher => watcher.email)
+    const bcc = watchers.map(watcher => watcher.email)
     const html = nunjucks.render('single.html', job.toJSON())
 
-    this.transport.sendMail({
-      from: 'automation@exceleratedigital.com',
-      subject,
-      bcc,
-      html,
-    }, (err, info) => err && console.error(err))
+    return new Promise((resolve, reject) => {
+      this.transport.sendMail({
+        from: 'automation@exceleratedigital.com',
+        subject,
+        bcc,
+        html,
+      }, (err, info) => err ? reject(err) : resolve(info))
+    })
 
     // @TODO: add debounce for emails so we don't mail too frequentyly
   }

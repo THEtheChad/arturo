@@ -22,6 +22,7 @@ export default class Reader extends stream.Readable {
     let { count, rows } = await this.model.findAndCountAll(
       Object.assign({}, this.query, this.opts)
     )
+    this.emit('count', count)
     this.total = count
     this.rows = this.rows.concat(rows)
     this.pending = false

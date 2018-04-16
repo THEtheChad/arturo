@@ -1,5 +1,9 @@
-import Client from './client'
-import Server from './server'
-import Worker from './worker'
+const Server = require('./server').default
+const Worker = require('./worker').default
+const Client = require('./worker/Registree').default
 
-export default { Client, Server, Worker }
+module.exports = {
+  Server,
+  Worker,
+  Client,
+}

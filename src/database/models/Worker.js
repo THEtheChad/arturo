@@ -2,8 +2,12 @@ module.exports = function (sequelize, DataTypes) {
   const Route = sequelize.define('Worker', {
     route: {
       type: DataTypes.STRING,
-      primaryKey: true,
       allowNull: false,
+    },
+    active: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
     },
     type: {
       type: DataTypes.STRING,
@@ -12,15 +16,10 @@ module.exports = function (sequelize, DataTypes) {
     path: {
       type: DataTypes.STRING,
       allowNull: false,
-    }
-  }, {
-      timestamps: false,
-    })
+    },
+  })
 
-  Route.associate = function ({ Worker, Server }) {
-    Server.belongsToMany(Worker, { through: 'Server_Workers' })
-    Worker.belongsToMany(Server, { through: 'Server_Workers' })
-  }
+  Route.associate = function () { }
 
   return Route
 };

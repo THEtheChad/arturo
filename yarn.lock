@@ -1988,6 +1988,12 @@ helper-slugify@^0.2.0:
   dependencies:
     strip-color "^0.1.0"
 
+highland@^2.13.0:
+  version "2.13.0"
+  resolved "https://registry.npmjs.org/highland/-/highland-2.13.0.tgz#a4394d8dcb970cd071a79a20f0762b906258dc19"
+  dependencies:
+    util-deprecate "^1.0.2"
+
 hoek@2.x.x:
   version "2.16.3"
   resolved "https://registry.npmjs.org/hoek/-/hoek-2.16.3.tgz#20bb7403d3cea398e91dc4710a8ff1b8274a25ed"

@@ -1,7 +1,5 @@
 import stream from 'stream'
 
-process.on('unhandledRejection', err => console.log(err))
-
 export default class Persist extends stream.Writable {
   constructor(model, operation, opts = {}) {
     super({ objectMode: true })

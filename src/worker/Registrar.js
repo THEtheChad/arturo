@@ -2,7 +2,7 @@ import nssocket from 'nssocket'
 import Debug from 'debug'
 import Queue from '../utilities/Queue'
 import Worker from '../objects/Worker'
-const debug = Debug('arturo:server:registrar')
+const debug = Debug('arturo:registrar')
 
 export default class Registrar {
   constructor(port = 61681) {

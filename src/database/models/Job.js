@@ -78,8 +78,8 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: DataTypes.NOW,
       allowNull: false,
     },
-    startDate: type: DataTypes.DATE,
-    finishDate: type: DataTypes.DATE,
+    startDate: DataTypes.DATE,
+    finishDate: DataTypes.DATE,
   })
 
   Job.associate = function () { }
