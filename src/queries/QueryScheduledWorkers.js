@@ -36,7 +36,6 @@ export default class QueryScheduledWorkers extends stream.Readable {
           WHERE
               Jobs.status IN ('scheduled', 'retry') AND
               ${generator.whereItemQuery(generator._castKey('Jobs.scheduledDate', now), { [Op.lte]: now })}
-              Jobs.scheduledDate <= CONVERT('${().toISOString()}', datetime)
             GROUP BY Jobs.route
         )
     `)
