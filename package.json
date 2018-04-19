@@ -26,7 +26,7 @@
     "debug": "^3.1.0",
     "fastpriorityqueue": "^0.3.1",
     "highland": "^2.13.0",
-    "moment": "^2.22.0",
+    "moment": "^2.22.1",
     "nodemailer": "^4.6.2",
     "nssocket": "^0.6.0",
     "nunjucks": "^3.1.2",
@@ -37,7 +37,7 @@
   },
   "optionalDependencies": {
     "mysql2": "^1.5.2",
-    "sequelize": "^4.35.2"
+    "sequelize": "^4.37.6"
   },
   "peerDependencies": {}
 }
