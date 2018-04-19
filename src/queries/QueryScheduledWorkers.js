@@ -21,6 +21,10 @@ export default class QueryScheduledWorkers extends stream.Readable {
     if (this.destroyed) return
     if (this.readableLength > 0) return
 
+    const { Op, dialect } = this.sequelize
+    const generator = dialect.QueryGenerator
+    const now = new Date
+
     this.sequelize.query(`
       SELECT *
       FROM Workers
@@ -31,7 +35,8 @@ export default class QueryScheduledWorkers extends stream.Readable {
           FROM Jobs
           WHERE
               Jobs.status IN ('scheduled', 'retry') AND
-              Jobs.scheduledDate <= CONVERT('${new Date().toISOString()}', datetime)
+              ${generator.whereItemQuery(generator._castKey('Jobs.scheduledDate', now), { [Op.lte]: now })}
+              Jobs.scheduledDate <= CONVERT('${().toISOString()}', datetime)
             GROUP BY Jobs.route
         )
     `)
