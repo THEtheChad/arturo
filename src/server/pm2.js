@@ -1,7 +1,7 @@
 import pm2 from 'pm2'
 
-console.log('mounting to pm2 process...')
 pm2.connect(err => {
+  console.log('mounting to pm2 process...')
   if (err) {
     console.error(err)
     process.exit(2)
