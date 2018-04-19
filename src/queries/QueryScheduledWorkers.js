@@ -35,7 +35,7 @@ export default class QueryScheduledWorkers extends stream.Readable {
           FROM Jobs
           WHERE
               Jobs.status IN ('scheduled', 'retry') AND
-              ${generator.whereItemQuery(generator._castKey('Jobs.scheduledDate', now), { [Op.lte]: now })}
+              ${generator.whereItemQuery(this.sequelize.literal('Jobs.scheduledDate'), { [Op.lte]: now })}
             GROUP BY Jobs.route
         )
     `)
