@@ -30,7 +30,9 @@
     "nodemailer": "^4.6.2",
     "nssocket": "^0.6.0",
     "nunjucks": "^3.1.2",
-    "toobusy-js": "^0.5.1"
+    "short-uuid": "^3.0.0",
+    "toobusy-js": "^0.5.1",
+    "uuid": "^3.2.1"
   },
   "optionalDependencies": {
     "mysql2": "^1.5.2",

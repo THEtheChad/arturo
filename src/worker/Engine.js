@@ -1,15 +1,15 @@
 import Actor from '../utilities/Actor'
 
-export default class Engine extends Actor {
+export default class Worker extends Actor {
   constructor(worker, opts) {
     super(opts)
 
-    this.worker = async (job) => worker(job)
+    this.worker = worker
   }
 
   async _compute(job) {
     const worker = this.worker(job)
-    const operations = [this.worker]
+    const operations = [worker]
 
     if (job.ttl) {
       const timeout = new Promise((resolve, reject) => {
@@ -22,12 +22,8 @@ export default class Engine extends Actor {
       operations.push(timeout)
     }
 
-    try {
-      await Promise.all(operations)
-      this.push({ status: 'completed', job })
-    }
-    catch (err) {
-      this.push({ status: 'failed', job, err: err.message })
-    }
+    await Promise.all(operations)
+    job.status = 'completed'
+    this.push(job)
   }
 }

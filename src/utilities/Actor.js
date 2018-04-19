@@ -1,78 +1,63 @@
+import os from 'os'
+import Debug from 'debug'
 import stream from 'stream'
+import uuid from './uuid'
 
-export default class Actor extends stream.Transform {
+export default class Actor extends stream.Duplex {
   constructor(opts = {}) {
     super({ objectMode: true })
 
+    this.uuid = `${this.constructor.name}-${process.pid}-${uuid()}`
+
     this.opts = opts
-
-    this.active = []
+    this.active = 0
     this.concurrency = opts.concurrency || 1
-    this.compute = async (payload) => this._compute(payload)
-    this._outbox = new stream.PassThrough({ objectMode: true })
-    this.pipe(this._outbox)
 
-    this.on('pause', () => console.log(`paused ${this.constructor.name}`))
+    const push = this.push
+    this.push = function (payload) {
+      if (payload === null) {
+        return push.call(this, null)
+      } else {
+        return push.call(this, payload.payload ? payload : { payload })
+      }
+    }
+
+    this.on('finish', () => this.push(null))
+
+    this.debug = Debug(`arturo:${this.uuid}`)
   }
+
+  logError(err) {
+    const errId = `${this.uuid}:ERR${uuid()}`
+    console.error(errId)
+    console.error(err)
+    return errId
+  }
+
+  async _write({ payload }, enc, next) {
+    this.active++
+    let concurrent = this.active < this.concurrency
+
+    if (concurrent) next()
+
+    try {
+      await Promise.resolve(this._compute(payload))
+    } catch (err) {
+      const errorId = this.logError(err)
+      this.push({ payload, errorMsg: err.message, errorId })
+    }
+
+    this.active--
+    if (!concurrent) next()
+  }
+
+  _read() { }
 
   _compute(payload) {
     throw new Error('Must provide a _compute method to Actor')
   }
 
-  begin(operation) {
-    this.active.push(operation)
-    operation
-      .then(() => this.resolve(operation))
-      .catch(err => {
-        this.resolve(operation)
-        return err
-      })
-  }
-
-  resolve(operation) {
-    const idx = this.active.indexOf(operation)
-    this.active.splice(idx, 1)
-  }
-
   get empty() {
-    return this.readableLength === 0
-  }
-
-  inbox(stream, opts = { end: false }) {
-    if (stream) {
-      stream.pipe(this, opts)
-      return this
-    }
-    const input = new stream.PassThrough({ objectMode: true })
-    input.pipe(this, { end: false })
-    return input
-  }
-
-  outbox(stream, opts = { end: false }) {
-    if (stream) {
-      this._outbox.pipe(stream, opts)
-      return this
-    }
-    return this._outbox
-  }
-
-  async _transform(payload, enc, next) {
-    if (this.flushing) return
-
-    const operation = this.compute(payload)
-
-    this.begin(operation)
-    let concurrent = this.active.length < this.concurrency
-
-    if (concurrent) next()
-
-    try {
-      await operation
-    } catch (err) {
-      this.emit('error', err)
-    }
-    this.resolve(operation)
-
-    if (!concurrent) next()
+    return this.writableLength === 0
   }
 }

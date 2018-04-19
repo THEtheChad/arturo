@@ -4,6 +4,11 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.STRING,
       allowNull: false,
     },
+    domain: DataTypes.STRING,
+    port: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     pid: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -18,15 +23,14 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
       defaultValue: DataTypes.NOW,
       set: function () {
-        console.log('setting value')
         this.setDataValue('keepAlive', new Date)
       }
     },
   })
 
   Server.associate = function ({ Server, Worker }) {
-    Server.hasMany(Worker)
-    Worker.belongsTo(Server)
+    Server.hasMany(Worker, { foreignKey: 'serverId' })
+    Worker.belongsTo(Server, { foreignKey: 'serverId' })
   }
 
   return Server;

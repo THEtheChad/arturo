@@ -7,6 +7,6 @@ Arturo.Worker(job => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       job.params.fail ? reject(new Error('shit')) : resolve('weeeeee!!!')
-    }, 5000)
+    }, 500)
   })
 })

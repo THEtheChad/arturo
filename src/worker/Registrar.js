@@ -2,20 +2,24 @@ import nssocket from 'nssocket'
 import Debug from 'debug'
 import Queue from '../utilities/Queue'
 import Worker from '../objects/Worker'
-const debug = Debug('arturo:registrar')
+import Shutdown from '../server/Shutdown'
+import uuid from '../utilities/uuid'
 
 export default class Registrar {
   constructor(port = 61681) {
+    this.uuid = `${this.constructor.name}-${process.pid}-${uuid()}`
+    this.debug = Debug(`arturo:${this.uuid}`)
+
     this.queue = {
       add: new Queue,
       remove: new Queue
     }
 
     this.listener = nssocket.createServer(socket => {
-      function method(event, queue) {
+      const method = (event, queue) => {
         socket.data(event.split('.'), (worker) => {
-          debug(`${event} ${worker.route}`)
-          queue.push(new Worker(worker))
+          this.debug(`${event} ${worker.route}`)
+          queue.write(worker)
           socket.send(['recieved'])
         })
       }
@@ -26,7 +30,7 @@ export default class Registrar {
       socket.send(['connected'])
     })
       .on('listening', () =>
-        debug(`listening on ${this.listener.address().address}:${this.listener.address().port}`))
+        this.debug(`listening on ${this.listener.address().address}:${this.listener.address().port}`))
       .on('error', err => {
         const restartDelay = 5000
         console.error(`WARNING: Registrar encountered an error`)
@@ -35,6 +39,11 @@ export default class Registrar {
         setTimeout(() => Registrar(server, port), restartDelay)
       })
       .listen(port)
+
+    Shutdown.addHandler((code, sig) => {
+      this.queue.add.end()
+      this.queue.remove.end()
+    })
   }
 
   close(done) { this.listener.close(done) }

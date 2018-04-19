@@ -8,6 +8,8 @@ export default class Worker {
 
     this.data = {
       route: null,
+      active: true,
+      concurrency: 1,
       type: 'local',
       path: null,
     }

@@ -1,21 +1,24 @@
-import stream from 'stream'
 import Debug from 'debug'
-const debug = Debug('arturo:query:scheduled-workers')
+import stream from 'stream'
+import uuid from '../utilities/uuid'
+import Shutdown from '../server/Shutdown'
 
 export default class QueryScheduledWorkers extends stream.Readable {
   constructor(sequelize, trigger) {
     super({ objectMode: true })
 
     this.sequelize = sequelize
-    this.timer = setInterval(() => this.queue(), trigger)
+    this.uuid = `${this.constructor.name}-${process.pid}-${uuid()}`
+    this.debug = Debug(`arturo:${this.uuid}`)
 
-    global.shutdown((code, sig) => {
-      this.destroy()
-      debug(`${this.constructor.name} shutdown complete!`)
-    })
+    Shutdown.addHandler((code, sig, done) => this.destroy(null, () => {
+      console.log(`${this.uuid} shutdown complete...`)
+      done()
+    }))
   }
 
-  queue() {
+  fetch() {
+    if (this.destroyed) return
     if (this.readableLength > 0) return
 
     this.sequelize.query(`
@@ -33,7 +36,7 @@ export default class QueryScheduledWorkers extends stream.Readable {
         )
     `)
       .spread((workers, metadata) => {
-        debug(`found ${workers.length} scheduled workers...`)
+        this.debug(`found ${workers.length} worker(s) with scheduled jobs...`)
         workers.forEach(worker => this.push(worker))
       })
   }
@@ -41,8 +44,8 @@ export default class QueryScheduledWorkers extends stream.Readable {
   _read() { }
 
   _destroy(err, done) {
+    this.push(null)
     this.unpipe()
-    clearInterval(this.timer)
     done()
   }
 }

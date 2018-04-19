@@ -9,6 +9,11 @@ module.exports = function (sequelize, DataTypes) {
       primaryKey: true,
       autoIncrement: true,
     },
+    priority: {
+      type: DataTypes.DECIMAL,
+      allowNull: false,
+      defaultValue: 50,
+    },
     status: {
       type: DataTypes.STRING,
       defaultValue: 'scheduled',
@@ -20,21 +25,33 @@ module.exports = function (sequelize, DataTypes) {
     },
     params: {
       type: DataTypes.STRING,
-      allowNull: false,
-      defaultValue: '{}',
       set: function (json) {
-        const str = (json == null) ? '{}' : JSON.stringify(json)
-        this.setDataValue('params', str)
+        let value = null
+
+        if (json && Object.keys(json).length) {
+          value = JSON.stringify(json)
+        }
+
+        this.setDataValue('params', value)
       },
       get: function () {
-        const str = this.getDataValue('params')
-        return JSON.parse(str)
+        const params = this.getDataValue('params')
+        return params ? JSON.parse(params) : {}
       },
     },
     hash: {
       type: DataTypes.STRING,
-      allowNull: false,
-      defaultValue: '',
+      set: function (hash) {
+        let value = null
+
+        if (hash) value = hash
+
+        this.setDataValue('hash', value)
+      },
+      get: function () {
+        const hash = this.getDataValue('hash')
+        return hash || ''
+      },
     },
     attempts: {
       type: DataTypes.INTEGER,
@@ -51,11 +68,8 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: 0x6ddd00, // 2 hours
       comment: 'in milliseconds',
     },
-    error: {
-      type: DataTypes.STRING,
-      defaultValue: null,
-      allowNull: true,
-    },
+    errorMsg: DataTypes.STRING,
+    errorId: DataTypes.STRING,
     backoff: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -68,6 +82,7 @@ module.exports = function (sequelize, DataTypes) {
       comment: 'in milliseconds',
     },
     lastServer: DataTypes.INTEGER,
+    lock: DataTypes.INTEGER,
     scheduledDate: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,

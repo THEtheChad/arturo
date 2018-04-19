@@ -1,39 +1,41 @@
 import Debug from 'debug'
 import stream from 'stream'
-const debug = Debug('arturo:query:worker-jobs')
+import uuid from '../utilities/uuid'
+import Shutdown from '../server/Shutdown'
 
 export default class QueryWorkerJobs extends stream.Readable {
-  constructor(sequelize, worker, opts) {
+  constructor(sequelize, worker) {
     super({ objectMode: true })
 
     const { Op } = sequelize
 
-    this.opts = opts
+    this.uuid = `${this.constructor.name}-${process.pid}-${uuid()}`
+    this.debug = Debug(`arturo:${this.uuid}`)
+
     this.sequelize = sequelize
-    this.worker = worker
     this.where = {
       route: worker.route,
       status: ['scheduled', 'retry'],
       scheduledDate: { [Op.lte]: new Date },
+      lock: null,
     }
 
-    this.sequelize.models.Job.count({ where: this.where })
-      .then(count => debug(`found ${count} scheduled jobs for ${worker.route}...`))
-
-    // global.shutdown((code, sig) => new Promise(resolve => {
-    //   this.destroy(null, (err) => {
-    //     debug(`${this.constructor.name} shutdown complete!`)
-    //     resolve()
-    //   })
-    // }))
+    Shutdown.addHandler((code, sig) => {
+      this.destroy()
+      console.log(`${this.constructor.name} shutdown complete...`)
+    }, (remover) => this.once('end', remover))
   }
 
   async _read() {
     if (this.destroyed) return
 
+    const { sequelize } = this
+    const { Job } = sequelize.models
+
     try {
-      await this.sequelize.transaction(async transaction => {
-        const instance = await this.sequelize.models.Job.findOne({
+      let instance = null
+      await sequelize.transaction(async transaction => {
+        instance = await Job.findOne({
           where: this.where,
           lock: transaction.LOCK.UPDATE,
           transaction
@@ -41,34 +43,19 @@ export default class QueryWorkerJobs extends stream.Readable {
 
         if (instance) {
           await instance.update({
-            attempts: instance.attempts + 1,
-            status: 'processing',
             lastServer: global.server ? global.server.id : -1,
-            startDate: new Date,
+            lock: global.server ? global.server.id : -1,
           }, { transaction })
-          this.push(instance.toJSON())
-        } else {
-          this.push(null)
         }
       })
+      this.push(instance ? instance.toJSON() : null)
     } catch (err) {
-      console.error('DATABASE ERROR')
+      console.error(`${this.uuid}: DATABASE ERROR`)
       console.error(err)
     }
   }
 
-  // async _destroy(err, done) {
-  //   this.unpipe()
-  //   let job
-  //   while (job = this.read()) {
-  //     const attempts = job.attempts - 1
-  //     await this.sequelize.models.Job.update({
-  //       attempts,
-  //       status: attempts > 0 ? 'retry' : 'scheduled',
-  //       lastServer: global.server ? global.server.id : -1,
-  //       startDate: null,
-  //     }, { where: { id: job.id } })
-  //   }
-  //   done()
-  // }
+  _destroy() {
+    this.end()
+  }
 }

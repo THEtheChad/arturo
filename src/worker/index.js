@@ -12,19 +12,24 @@ export default function Factory(worker, opts = {}) {
     worker = promisify(worker)
 
   const messenger = opts.messenger || process
+  const queue = new Queue()
 
-  const queue = new Queue
-  const engine = new Engine(worker, opts)
-  engine.inbox(queue, { end: true })
-
-  engine.outbox()
-    .on('data', result => messenger.send(result))
-    .on('end', () => messenger.disconnect())
+  queue
+    .pipe(new Engine(worker, opts))
+    .on('data', ({ payload: job, errorMsg, errorId }) => {
+      if (errorMsg) {
+        job.status = 'failed'
+        job.errorMsg = errorMsg
+        job.errorId = errorId
+      }
+      messenger.send(job)
+    })
+    .on('end', () => messenger.kill())
 
   messenger.on('message', (msg) => {
     switch (msg.type) {
-      case 'job': queue.push(msg.job); break
-      case 'end': queue.push(null); break
+      case 'job': queue.write(msg.job); break
+      case 'end': queue.end(); break
     }
   })
 
